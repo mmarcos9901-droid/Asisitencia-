@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Registro de Días Trabajados</title>
+    <title>Registro de Días Trabajados - Marcos Mendez</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -12,28 +12,29 @@
         
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #f8fafc;
+            background-color: #f1f5f9;
         }
 
         .day-cell {
-            aspect-ratio: 1 / 1;
+            position: relative;
+            min-height: 55px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             transition: all 0.2s ease;
+            border-radius: 0.5rem;
         }
 
         .status-none { background-color: #ffffff; border: 1px solid #e2e8f0; color: #64748b; }
-        .status-santiago { background-color: #22c55e; border: 1px solid #16a34a; color: white; font-weight: 600; }
-        .status-region { background-color: #f97316; border: 1px solid #ea580c; color: white; font-weight: 600; }
+        .status-santiago { background-color: #22c55e; border: 1px solid #15803d; color: white; font-weight: 700; box-shadow: inset 0 0 10px rgba(0,0,0,0.1); }
+        .status-region { background-color: #f97316; border: 1px solid #c2410c; color: white; font-weight: 700; box-shadow: inset 0 0 10px rgba(0,0,0,0.1); }
 
-        .btn-action {
-            display: inline-flex;
-            align-items: center;
-            padding: 0.5rem 1rem;
-            border-radius: 0.5rem;
-            font-weight: 500;
-            transition: transform 0.1s;
+        /* Estilo planilla para exportación */
+        .planilla-header {
+            border-bottom: 2px solid #1e293b;
+            padding-bottom: 1rem;
+            margin-bottom: 1.5rem;
         }
-
-        .btn-action:active { transform: scale(0.95); }
 
         @media print {
             .no-print { display: none !important; }
@@ -43,151 +44,191 @@
 <body class="p-4 md:p-8">
 
     <div class="max-w-4xl mx-auto">
-        <!-- Header -->
-        <header class="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
+        <!-- Header Principal -->
+        <header class="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4 no-print">
             <div>
-                <h1 class="text-3xl font-bold text-slate-800">Registro de Asistencia</h1>
-                <p class="text-slate-500">Gestiona tus días trabajados en Santiago y Regiones</p>
+                <h1 class="text-3xl font-extrabold text-slate-900 tracking-tight">Control de Asistencia</h1>
+                <p class="text-slate-500 font-medium">Colaborador: <span class="text-blue-600">Marcos Mendez</span></p>
             </div>
             
-            <div class="flex flex-wrap gap-2 no-print">
-                <button onclick="changeMonth(-1)" class="bg-white border p-2 rounded-lg shadow-sm hover:bg-gray-50">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+            <div class="flex flex-wrap gap-2 items-center">
+                <button onclick="changeMonth(-1)" class="bg-white border p-2 rounded-lg shadow-sm hover:bg-gray-50 transition-all">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg>
                 </button>
-                <div id="currentMonthLabel" class="bg-white border px-4 py-2 rounded-lg font-bold shadow-sm min-w-[150px] text-center">
-                    Enero 2024
+                <div id="currentMonthLabel" class="bg-white border px-4 py-2 rounded-lg font-bold shadow-sm min-w-[160px] text-center text-slate-700">
+                    Mes Año
                 </div>
-                <button onclick="changeMonth(1)" class="bg-white border p-2 rounded-lg shadow-sm hover:bg-gray-50">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+                <button onclick="changeMonth(1)" class="bg-white border p-2 rounded-lg shadow-sm hover:bg-gray-50 transition-all">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>
                 </button>
             </div>
         </header>
 
-        <!-- Stats & Controls -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <div class="bg-white p-4 rounded-xl border shadow-sm border-l-4 border-l-green-500">
-                <p class="text-xs text-slate-500 uppercase tracking-wider font-bold">Santiago</p>
-                <p id="countSantiago" class="text-2xl font-bold text-slate-800">0 días</p>
-            </div>
-            <div class="bg-white p-4 rounded-xl border shadow-sm border-l-4 border-l-orange-500">
-                <p class="text-xs text-slate-500 uppercase tracking-wider font-bold">Región</p>
-                <p id="countRegion" class="text-2xl font-bold text-slate-800">0 días</p>
-            </div>
-            <div class="bg-white p-4 rounded-xl border shadow-sm flex items-center justify-around no-print">
-                <button id="viewToggle" onclick="toggleView()" class="flex flex-col items-center text-blue-600 hover:text-blue-800">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10h18M3 14h18M3 18h18M3 6h18"/></svg>
-                    <span class="text-[10px] mt-1 uppercase font-bold">Ver Listado</span>
-                </button>
-                <button onclick="exportToImage()" class="flex flex-col items-center text-slate-600 hover:text-slate-800">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
-                    <span class="text-[10px] mt-1 uppercase font-bold">Imagen</span>
-                </button>
-                <button onclick="exportToPDF()" class="flex flex-col items-center text-red-600 hover:text-red-800">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
-                    <span class="text-[10px] mt-1 uppercase font-bold">PDF</span>
+        <!-- Filtro por Rango -->
+        <div class="bg-white border border-slate-200 p-5 rounded-2xl mb-6 shadow-sm no-print">
+            <h2 class="text-xs font-black text-slate-400 mb-4 uppercase tracking-[0.2em]">Exportar Rango Personalizado</h2>
+            <div class="flex flex-col md:flex-row gap-4 items-end">
+                <div class="flex-1 w-full">
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1 ml-1">Fecha Inicio</label>
+                    <input type="date" id="rangeStart" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm text-slate-700 focus:ring-2 focus:ring-blue-500 outline-none transition-all">
+                </div>
+                <div class="flex-1 w-full">
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1 ml-1">Fecha Término</label>
+                    <input type="date" id="rangeEnd" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm text-slate-700 focus:ring-2 focus:ring-blue-500 outline-none transition-all">
+                </div>
+                <button onclick="generateRangeReport()" class="w-full md:w-auto bg-slate-900 text-white px-6 py-3 rounded-xl text-sm font-bold hover:bg-slate-800 transition-all shadow-lg shadow-slate-200">
+                    Generar Planilla
                 </button>
             </div>
         </div>
 
-        <!-- Main Content (Target for export) -->
-        <div id="exportTarget" class="bg-white p-6 rounded-2xl border shadow-sm overflow-hidden">
-            
-            <div id="calendarView">
-                <div class="grid grid-cols-7 gap-2 mb-2">
-                    <div class="text-center text-xs font-bold text-slate-400 uppercase py-2">Lun</div>
-                    <div class="text-center text-xs font-bold text-slate-400 uppercase py-2">Mar</div>
-                    <div class="text-center text-xs font-bold text-slate-400 uppercase py-2">Mié</div>
-                    <div class="text-center text-xs font-bold text-slate-400 uppercase py-2">Jue</div>
-                    <div class="text-center text-xs font-bold text-slate-400 uppercase py-2">Vie</div>
-                    <div class="text-center text-xs font-bold text-slate-400 uppercase py-2">Sáb</div>
-                    <div class="text-center text-xs font-bold text-slate-400 uppercase py-2">Dom</div>
+        <!-- Estadísticas -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 no-print">
+            <div class="bg-white p-5 rounded-2xl border shadow-sm border-l-8 border-l-green-500">
+                <p class="text-[10px] text-slate-400 uppercase font-black tracking-widest">Santiago</p>
+                <p id="countSantiago" class="text-3xl font-black text-slate-800">0</p>
+            </div>
+            <div class="bg-white p-5 rounded-2xl border shadow-sm border-l-8 border-l-orange-500">
+                <p class="text-[10px] text-slate-400 uppercase font-black tracking-widest">Región</p>
+                <p id="countRegion" class="text-3xl font-black text-slate-800">0</p>
+            </div>
+            <div class="bg-white p-2 rounded-2xl border shadow-sm flex items-center justify-around">
+                <button id="viewToggle" onclick="toggleView()" class="flex flex-col items-center p-3 text-blue-600 hover:bg-blue-50 rounded-xl transition-all">
+                    <svg id="viewIcon" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 10h18M3 14h18M3 18h18M3 6h18"/></svg>
+                    <span id="viewText" class="text-[9px] mt-1 font-black uppercase">Listado</span>
+                </button>
+                <button onclick="exportToImage()" class="flex flex-col items-center p-3 text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+                    <span class="text-[9px] mt-1 font-black uppercase">Imagen</span>
+                </button>
+                <button onclick="exportToPDF()" class="flex flex-col items-center p-3 text-rose-600 hover:bg-rose-50 rounded-xl transition-all">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" x2="8" y1="13" y2="13"/><line x1="16" x2="8" y1="17" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                    <span class="text-[9px] mt-1 font-black uppercase">PDF</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- AREA DE EXPORTACIÓN (Planilla) -->
+        <div id="exportTarget" class="bg-white p-8 md:p-12 rounded-3xl border shadow-xl overflow-hidden relative">
+            <!-- Encabezado de la Planilla -->
+            <div class="planilla-header flex justify-between items-start">
+                <div>
+                    <h2 class="text-2xl font-black text-slate-900">PLANILLA DE ASISTENCIA</h2>
+                    <p class="text-slate-500 font-bold text-sm">Nombre: <span class="text-slate-900 uppercase">Marcos Mendez</span></p>
                 </div>
-                <div id="calendarGrid" class="grid grid-cols-7 gap-2">
-                    <!-- Days injected here -->
-                </div>
-                
-                <div class="mt-8 flex gap-6 justify-center text-sm border-t pt-4">
-                    <div class="flex items-center gap-2">
-                        <span class="w-3 h-3 bg-green-500 rounded-full"></span>
-                        <span class="text-slate-600">Santiago</span>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <span class="w-3 h-3 bg-orange-500 rounded-full"></span>
-                        <span class="text-slate-600">Región</span>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <span class="w-3 h-3 bg-white border border-slate-300 rounded-full"></span>
-                        <span class="text-slate-600">No trabajado</span>
-                    </div>
+                <div class="text-right">
+                    <p id="reportPeriod" class="text-sm font-black text-blue-600 uppercase tracking-tighter">Mes Corriente</p>
+                    <p class="text-[10px] text-slate-400 font-bold uppercase">Generado el: <span id="genDate">--/--/----</span></p>
                 </div>
             </div>
+            
+            <!-- Vista Calendario -->
+            <div id="calendarView">
+                <div class="grid grid-cols-7 gap-2 mb-4">
+                    <div class="text-center text-[10px] font-black text-slate-400 uppercase py-2">Lun</div>
+                    <div class="text-center text-[10px] font-black text-slate-400 uppercase py-2">Mar</div>
+                    <div class="text-center text-[10px] font-black text-slate-400 uppercase py-2">Mié</div>
+                    <div class="text-center text-[10px] font-black text-slate-400 uppercase py-2">Jue</div>
+                    <div class="text-center text-[10px] font-black text-slate-400 uppercase py-2">Vie</div>
+                    <div class="text-center text-[10px] font-black text-red-300 uppercase py-2">Sáb</div>
+                    <div class="text-center text-[10px] font-black text-red-300 uppercase py-2">Dom</div>
+                </div>
+                <div id="calendarGrid" class="grid grid-cols-7 gap-2"></div>
+            </div>
 
+            <!-- Vista Listado -->
             <div id="listView" class="hidden">
-                <table class="w-full text-left">
+                <table class="w-full text-left border-collapse">
                     <thead>
-                        <tr class="border-b text-slate-400 text-sm uppercase">
-                            <th class="py-3 font-semibold">Fecha</th>
-                            <th class="py-3 font-semibold">Día</th>
-                            <th class="py-3 font-semibold text-right">Ubicación</th>
+                        <tr class="border-b-2 border-slate-900 text-slate-900 text-[11px] font-black uppercase tracking-widest">
+                            <th class="py-4 px-2">Fecha Detallada</th>
+                            <th class="py-4 px-2">Día Semana</th>
+                            <th class="py-4 px-2 text-right">Ubicación Laboral</th>
                         </tr>
                     </thead>
-                    <tbody id="listBody">
-                        <!-- List items injected here -->
-                    </tbody>
+                    <tbody id="listBody" class="text-sm"></tbody>
                 </table>
+            </div>
+            
+            <!-- Resumen Inferior en la Planilla -->
+            <div class="mt-10 pt-6 border-t border-slate-100 flex flex-col md:flex-row justify-between items-center gap-4">
+                <div class="flex gap-4">
+                    <div class="flex items-center gap-2 bg-green-50 px-3 py-1.5 rounded-lg border border-green-100">
+                        <span class="w-3 h-3 bg-green-500 rounded-full"></span>
+                        <span class="text-[10px] text-green-800 font-black uppercase">Santiago: <span id="resS">0</span></span>
+                    </div>
+                    <div class="flex items-center gap-2 bg-orange-50 px-3 py-1.5 rounded-lg border border-orange-100">
+                        <span class="w-3 h-3 bg-orange-500 rounded-full"></span>
+                        <span class="text-[10px] text-orange-800 font-black uppercase">Región: <span id="resR">0</span></span>
+                    </div>
+                </div>
+                <div class="text-[10px] text-slate-300 font-bold italic">
+                    Documento informativo de jornadas laborales - M. Mendez
+                </div>
             </div>
         </div>
 
-        <p class="mt-4 text-center text-xs text-slate-400 italic">Haz clic en un día para cambiar su estado: Blanco → Santiago → Región → Blanco</p>
+        <p id="instructionText" class="mt-6 text-center text-[11px] text-slate-400 font-medium italic no-print">
+            Instrucciones: Haz clic en un día del calendario para marcar Santiago (Verde), Región (Naranja) o Vacío.
+        </p>
     </div>
 
-    <!-- Feedback Message -->
-    <div id="msgBox" class="fixed bottom-4 left-1/2 -translate-x-1/2 bg-slate-800 text-white px-6 py-3 rounded-full text-sm font-medium shadow-xl opacity-0 transition-opacity pointer-events-none">
-        Mensaje aquí
+    <!-- Toast Notification -->
+    <div id="msgBox" class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-slate-900 text-white px-8 py-4 rounded-2xl text-xs font-bold shadow-2xl opacity-0 transition-all duration-300 pointer-events-none z-50 transform translate-y-4">
+        Mensaje
     </div>
 
     <script>
-        const { jsPDF } = window.jspdf;
-        
         let currentDate = new Date();
-        let workData = JSON.parse(localStorage.getItem('workData_v1')) || {};
+        let workData = JSON.parse(localStorage.getItem('workData_mendez_v1')) || {};
         let isListView = false;
+        let rangeActive = false;
 
         const months = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
 
         function showMessage(msg) {
             const box = document.getElementById('msgBox');
             box.innerText = msg;
-            box.classList.remove('opacity-0');
-            setTimeout(() => box.classList.add('opacity-0'), 2000);
+            box.classList.remove('opacity-0', 'translate-y-4');
+            box.classList.add('opacity-100', 'translate-y-0');
+            setTimeout(() => {
+                box.classList.remove('opacity-100', 'translate-y-0');
+                box.classList.add('opacity-0', 'translate-y-4');
+            }, 2500);
         }
 
         function toggleView() {
             isListView = !isListView;
+            rangeActive = false;
+            updateUI();
+        }
+
+        function updateUI() {
             document.getElementById('calendarView').classList.toggle('hidden', isListView);
             document.getElementById('listView').classList.toggle('hidden', !isListView);
+            document.getElementById('instructionText').classList.toggle('hidden', isListView);
             
-            const btn = document.getElementById('viewToggle');
+            const text = document.getElementById('viewText');
+            const icon = document.getElementById('viewIcon');
+            
             if(isListView) {
-                btn.innerHTML = `
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
-                    <span class="text-[10px] mt-1 uppercase font-bold">Ver Calendario</span>
-                `;
+                text.innerText = "Calendario";
+                icon.innerHTML = `<rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/>`;
             } else {
-                btn.innerHTML = `
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10h18M3 14h18M3 18h18M3 6h18"/></svg>
-                    <span class="text-[10px] mt-1 uppercase font-bold">Ver Listado</span>
-                `;
+                text.innerText = "Listado";
+                icon.innerHTML = `<path d="M3 10h18M3 14h18M3 18h18M3 6h18"/>`;
             }
             render();
         }
 
         function changeMonth(delta) {
+            rangeActive = false;
             currentDate.setMonth(currentDate.getMonth() + delta);
             render();
         }
 
         function toggleDay(dateKey) {
+            if (rangeActive) return;
             if (!workData[dateKey]) {
                 workData[dateKey] = 'santiago';
             } else if (workData[dateKey] === 'santiago') {
@@ -195,139 +236,174 @@
             } else {
                 delete workData[dateKey];
             }
-            localStorage.setItem('workData_v1', JSON.stringify(workData));
+            localStorage.setItem('workData_mendez_v1', JSON.stringify(workData));
             render();
+        }
+
+        function generateRangeReport() {
+            const startStr = document.getElementById('rangeStart').value;
+            const endStr = document.getElementById('rangeEnd').value;
+
+            if (!startStr || !endStr) {
+                showMessage("Debes seleccionar ambas fechas");
+                return;
+            }
+
+            const start = new Date(startStr + "T00:00:00");
+            const end = new Date(endStr + "T00:00:00");
+
+            if (start > end) {
+                showMessage("Fecha de inicio no puede ser mayor");
+                return;
+            }
+
+            rangeActive = true;
+            isListView = true;
+            
+            document.getElementById('reportPeriod').innerText = `PERIODO: ${start.toLocaleDateString()} - ${end.toLocaleDateString()}`;
+            
+            const body = document.getElementById('listBody');
+            body.innerHTML = '';
+            
+            let tempDate = new Date(start);
+            let s = 0, r = 0;
+
+            while (tempDate <= end) {
+                const dKey = tempDate.toISOString().split('T')[0];
+                const status = workData[dKey];
+                
+                if (status) {
+                    if (status === 'santiago') s++; else r++;
+                    
+                    const row = document.createElement('tr');
+                    row.className = 'border-b border-slate-50 hover:bg-slate-50/50 transition-colors';
+                    row.innerHTML = `
+                        <td class="py-4 px-2 font-bold text-slate-700">${tempDate.getDate()} de ${months[tempDate.getMonth()]} ${tempDate.getFullYear()}</td>
+                        <td class="py-4 px-2 text-slate-400 font-medium capitalize">${tempDate.toLocaleDateString('es-ES', { weekday: 'long' })}</td>
+                        <td class="py-4 px-2 text-right">
+                            <span class="inline-block px-3 py-1 rounded-lg text-[10px] font-black uppercase ${status === 'santiago' ? 'bg-green-500 text-white' : 'bg-orange-500 text-white'}">${status}</span>
+                        </td>
+                    `;
+                    body.appendChild(row);
+                }
+                tempDate.setDate(tempDate.getDate() + 1);
+            }
+
+            if (body.innerHTML === '') {
+                body.innerHTML = '<tr><td colspan="3" class="py-12 text-center text-slate-300 font-bold italic">No se encontraron días trabajados en este rango.</td></tr>';
+            }
+
+            document.getElementById('resS').innerText = s;
+            document.getElementById('resR').innerText = r;
+            updateUI();
+            showMessage(`Planilla de rango generada exitosamente`);
         }
 
         function render() {
             const year = currentDate.getFullYear();
             const month = currentDate.getMonth();
+            const dateStr = new Date().toLocaleDateString('es-ES');
             
             document.getElementById('currentMonthLabel').innerText = `${months[month]} ${year}`;
+            document.getElementById('genDate').innerText = dateStr;
 
-            renderCalendar(year, month);
-            renderList(year, month);
-            updateStats(year, month);
+            if (!rangeActive) {
+                document.getElementById('reportPeriod').innerText = `${months[month]} ${year}`;
+                renderCalendar(year, month);
+                renderList(year, month);
+                updateStats(year, month);
+            }
         }
 
         function renderCalendar(year, month) {
-            const firstDay = new Date(year, month, 1).getDay(); // 0 is Sun
+            const firstDay = new Date(year, month, 1).getDay();
             const daysInMonth = new Date(year, month + 1, 0).getDate();
             const grid = document.getElementById('calendarGrid');
             grid.innerHTML = '';
-
-            // Adjust firstDay (to start Monday)
+            
             const offset = firstDay === 0 ? 6 : firstDay - 1;
 
-            // Empty cells
             for (let i = 0; i < offset; i++) {
-                const empty = document.createElement('div');
-                empty.className = 'day-cell bg-slate-50/50 rounded-lg';
-                grid.appendChild(empty);
+                grid.appendChild(Object.assign(document.createElement('div'), { className: 'day-cell bg-slate-50/20' }));
             }
 
-            // Actual days
             for (let d = 1; d <= daysInMonth; d++) {
-                const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-                const status = workData[dateKey] || 'none';
-                
-                const dayEl = document.createElement('div');
-                dayEl.className = `day-cell flex items-center justify-center rounded-lg cursor-pointer shadow-sm text-sm sm:text-base status-${status}`;
-                dayEl.innerText = d;
-                dayEl.onclick = () => toggleDay(dateKey);
-                grid.appendChild(dayEl);
+                const dKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                const status = workData[dKey] || 'none';
+                const el = document.createElement('div');
+                el.className = `day-cell cursor-pointer text-sm shadow-sm status-${status}`;
+                el.innerHTML = `<span>${d}</span>`;
+                el.onclick = () => toggleDay(dKey);
+                grid.appendChild(el);
             }
         }
 
         function renderList(year, month) {
-            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            const days = new Date(year, month + 1, 0).getDate();
             const body = document.getElementById('listBody');
             body.innerHTML = '';
-
-            for (let d = 1; d <= daysInMonth; d++) {
-                const dateObj = new Date(year, month, d);
-                const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-                const status = workData[dateKey];
-
+            
+            let s = 0, r = 0;
+            for (let d = 1; d <= days; d++) {
+                const dKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                const status = workData[dKey];
                 if (!status) continue;
-
-                const dayName = dateObj.toLocaleDateString('es-ES', { weekday: 'long' });
-                const statusText = status === 'santiago' ? 'Santiago' : 'Región';
-                const colorClass = status === 'santiago' ? 'text-green-600 bg-green-50' : 'text-orange-600 bg-orange-50';
-
+                
+                if (status === 'santiago') s++; else r++;
+                const dObj = new Date(year, month, d);
                 const row = document.createElement('tr');
-                row.className = 'border-b last:border-0 hover:bg-slate-50 transition-colors';
+                row.className = 'border-b border-slate-50 hover:bg-slate-50/50';
                 row.innerHTML = `
-                    <td class="py-4 font-medium text-slate-700">${d} de ${months[month]}</td>
-                    <td class="py-4 text-slate-500 capitalize">${dayName}</td>
-                    <td class="py-4 text-right">
-                        <span class="px-3 py-1 rounded-full text-xs font-bold ${colorClass}">${statusText}</span>
-                    </td>
-                `;
+                    <td class="py-4 px-2 font-bold text-slate-700">${d} de ${months[month]}</td>
+                    <td class="py-4 px-2 text-slate-400 font-medium capitalize">${dObj.toLocaleDateString('es-ES', { weekday: 'long' })}</td>
+                    <td class="py-4 px-2 text-right">
+                        <span class="inline-block px-3 py-1 rounded-lg text-[10px] font-black uppercase ${status === 'santiago' ? 'bg-green-500 text-white' : 'bg-orange-500 text-white'}">${status}</span>
+                    </td>`;
                 body.appendChild(row);
             }
-
-            if (body.innerHTML === '') {
-                body.innerHTML = '<tr><td colspan="3" class="py-8 text-center text-slate-400 italic">No hay días registrados en este mes.</td></tr>';
-            }
+            document.getElementById('resS').innerText = s;
+            document.getElementById('resR').innerText = r;
+            if (body.innerHTML === '') body.innerHTML = '<tr><td colspan="3" class="py-12 text-center text-slate-300 italic">Mes sin registros.</td></tr>';
         }
 
         function updateStats(year, month) {
-            let santiago = 0;
-            let region = 0;
-
-            // Only count for current visible month in the UI stats
+            let s = 0, r = 0;
             const prefix = `${year}-${String(month + 1).padStart(2, '0')}`;
-            Object.keys(workData).forEach(key => {
-                if (key.startsWith(prefix)) {
-                    if (workData[key] === 'santiago') santiago++;
-                    if (workData[key] === 'region') region++;
+            Object.keys(workData).forEach(k => {
+                if (k.startsWith(prefix)) {
+                    if (workData[k] === 'santiago') s++; else r++;
                 }
             });
-
-            document.getElementById('countSantiago').innerText = `${santiago} ${santiago === 1 ? 'día' : 'días'}`;
-            document.getElementById('countRegion').innerText = `${region} ${region === 1 ? 'día' : 'días'}`;
+            document.getElementById('countSantiago').innerText = s;
+            document.getElementById('countRegion').innerText = r;
         }
 
         async function exportToImage() {
-            showMessage("Generando imagen...");
-            const target = document.getElementById('exportTarget');
-            const canvas = await html2canvas(target, { scale: 2 });
+            showMessage("Generando Planilla PNG...");
+            const canvas = await html2canvas(document.getElementById('exportTarget'), { scale: 3, backgroundColor: "#ffffff" });
             const link = document.createElement('a');
-            link.download = `Registro_Trabajo_${months[currentDate.getMonth()]}.png`;
+            link.download = `Planilla_Mendez_${rangeActive ? 'Rango' : months[currentDate.getMonth()]}.png`;
             link.href = canvas.toDataURL("image/png");
             link.click();
             showMessage("Imagen descargada");
         }
 
         async function exportToPDF() {
-            showMessage("Generando PDF...");
-            const target = document.getElementById('exportTarget');
-            const canvas = await html2canvas(target, { scale: 2 });
+            showMessage("Generando Planilla PDF...");
+            const canvas = await html2canvas(document.getElementById('exportTarget'), { scale: 2, backgroundColor: "#ffffff" });
             const imgData = canvas.toDataURL('image/png');
-            
-            const pdf = new jsPDF({
-                orientation: 'portrait',
-                unit: 'mm',
-                format: 'a4'
-            });
+            const { jsPDF } = window.jspdf;
+            const pdf = new jsPDF('p', 'mm', 'a4');
+            const pageWidth = pdf.internal.pageSize.getWidth();
+            const margin = 10;
+            const contentWidth = pageWidth - (margin * 2);
+            const pdfHeight = (canvas.height * contentWidth) / canvas.width;
 
-            const imgProps = pdf.getImageProperties(imgData);
-            const pdfWidth = pdf.internal.pageSize.getWidth() - 20;
-            const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-
-            // Add Header
-            pdf.setFontSize(18);
-            pdf.text(`Registro de Asistencia - ${months[currentDate.getMonth()]} ${currentDate.getFullYear()}`, 10, 15);
-            pdf.setFontSize(10);
-            pdf.text(`Resumen: Santiago (${document.getElementById('countSantiago').innerText}) - Región (${document.getElementById('countRegion').innerText})`, 10, 22);
-            
-            pdf.addImage(imgData, 'PNG', 10, 30, pdfWidth, pdfHeight);
-            pdf.save(`Registro_${months[currentDate.getMonth()]}.pdf`);
-            showMessage("PDF descargado");
+            pdf.addImage(imgData, 'PNG', margin, margin, contentWidth, pdfHeight);
+            pdf.save(`Planilla_MarcosMendez_${rangeActive ? 'Rango' : months[currentDate.getMonth()]}.pdf`);
+            showMessage("PDF descargado correctamente");
         }
 
-        // Initialize
         window.onload = render;
     </script>
 </body>
